@@ -17,7 +17,6 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "antd": "^5.8.3",
-    "axios": "^1.17.0",
     "bootstrap": "^5.3.1",
     "chart.js": "^4.5.1",
     "chartjs-plugin-datalabels": "^2.2.0",
@@ -66,7 +65,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "proxy": "node proxy-server.js",
+    "start:all": "start /B node proxy-server.js && react-scripts start"
   },
   "eslintConfig": {
     "extends": [
@@ -89,6 +90,10 @@
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@types/date-fns": "^2.6.3",
+    "axios": "^1.17.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "http-proxy-middleware": "^3.0.5",
     "web-vitals": "^3.3.2"
   }
 }
