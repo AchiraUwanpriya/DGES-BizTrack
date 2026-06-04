@@ -1,0 +1,404 @@
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Paper,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+} from "@mui/material";
+import { useTheme } from "@material-ui/core/styles";
+import IwoApp from "./IwoApp";
+import EwoApp from "./EwoApp";
+import MocApp from "./MocApp";
+import UmrApp from "./UmrApp";
+import {
+  GetLeaveBalance,
+  GetLeaveSummary,
+  GetNotEnteredLeave,
+  GetPunctuality,
+} from "../../action/Leave";
+import dayjs from "dayjs";
+import { useDispatch, useSelector } from "react-redux";
+import LeaveDetailsModal from "../../../src/components/Utility/LeaveDetailsModal";
+import LeaveSummaryModal from "../../../src/components/Utility/LeaveSummaryModal";
+import { Visibility, DesignServices } from "@mui/icons-material";
+import Swal from "sweetalert2";
+import axios from "axios";
+
+const Approvals = () => {
+    const theme = useTheme();
+    const dispatch = useDispatch();
+    const [value, setValue] = React.useState(0);
+    const [year, setYear] = React.useState(dayjs().year());
+    const [selectedRow, setSelectedRow] = useState(null);
+    const [openModal, setOpenModal] = useState(false);
+    const [openLeaveSummaryModal, setOpenLeaveSummaryModal] = useState(false);
+    const [selectedTab, setSelectedTab] = React.useState("UmrApp");
+    const [modalTitle, setModalTitle] = useState("");
+    const [leaveDetailsData, setLeaveDetailsData] = useState([]);
+    const [showLeaveBalanceSummary, setShowLeaveBalanceSummary] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const leaveBalanceData = useSelector(
+      (state) => state.leaveBalance.responseBody
+    );
+    const punctualityData = useSelector(
+      (state) => state.punctuality.responseBody
+    ); // Replace with correct selector
+    const notEnteredLeaveData = useSelector(
+      (state) => state.notEnteredLeave.responseBody
+    ); // Replace with correct selector
+    const isLoading = useSelector((state) => state.leaveBalance.loading);
+    const maxYear = new Date().getFullYear();
+    const years = Array.from({ length: 10 }, (_, index) => maxYear - index);
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column" }}>
+        {/* Table for Leave Data */}
+        {/* <FormControl
+          sx={{
+            minWidth: 130,
+            width: "100px",
+            mt: 1,
+            mb: 1,
+            "& .MuiSelect-root": {
+              height: "32px",
+              fontSize: "12px",
+            },
+            "& .MuiInputLabel-root": {
+              fontSize: "12px",
+              top: "4px",
+            },
+          }}
+        >
+          <InputLabel>Year</InputLabel>
+          <Select
+            // value={}
+            // onChange={}
+            label="Year"
+            size="small"
+            sx={{
+              height: "32px",
+              fontSize: "12px",
+            }}
+          >
+            <MenuItem value={2025}>2025</MenuItem>
+            <MenuItem value={2024}>2024</MenuItem>
+            <MenuItem value={2023}>2023</MenuItem>
+            <MenuItem value={2022}>2022</MenuItem>
+            <MenuItem value={2021}>2021</MenuItem>
+          </Select>
+        </FormControl> */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 0,
+          }}
+        >
+          <Button
+            variant={selectedTab === "UmrApp" ? "contained" : "outlined"}
+            // onClick={handleLeaveSummaryClick}
+            // onClick={() => handleTabClick("UmrApp")}
+            sx={{
+              borderRadius: "8px 0 0 8px",
+              backgroundColor:
+                selectedTab === "UmrApp" ? "#5ac8fa" : "transparent",
+              "&:hover": {
+                backgroundColor:
+                  selectedTab === "UmrApp" ? "#5ac8fa" : "#f1f1f1",
+              },
+            }}
+          >
+            IWO
+          </Button>
+          <Button
+            variant={selectedTab === "MocApp" ? "contained" : "outlined"}
+            // onClick={() => setSelectedTab("MocApp")}
+            // onClick={() => handleTabClick("MocApp")}
+            sx={{
+              borderRadius: 0,
+              backgroundColor:
+                selectedTab === "MocApp" ? "#5ac8fa" : "transparent",
+              "&:hover": {
+                backgroundColor:
+                  selectedTab === "MocApp" ? "#5ac8fa" : "#f1f1f1",
+              },
+            }}
+          >
+            EWO
+          </Button>
+          <Button
+            variant={selectedTab === "MocApp" ? "contained" : "outlined"}
+            // onClick={() => setSelectedTab("MocApp")}
+            // onClick={() => handleTabClick("MocApp")}
+            sx={{
+              borderRadius: 0,
+              backgroundColor:
+                selectedTab === "MocApp" ? "#5ac8fa" : "transparent",
+              "&:hover": {
+                backgroundColor:
+                  selectedTab === "MocApp" ? "#5ac8fa" : "#f1f1f1",
+              },
+            }}
+          >
+            MOC
+          </Button>
+          <Button
+            variant={selectedTab === "EwoApp" ? "contained" : "outlined"}
+            // onClick={() => setSelectedTab("EwoApp")}
+            // onClick={() => handleTabClick("EwoApp")}
+            sx={{
+              borderRadius: "0 8px 8px 0",
+              backgroundColor:
+                selectedTab === "EwoApp" ? "#5ac8fa" : "transparent",
+              "&:hover": {
+                backgroundColor:
+                  selectedTab === "EwoApp" ? "#5ac8fa" : "#f1f1f1",
+              },
+            }}
+          >
+            UMR
+          </Button>
+         
+        </Box>
+        {showLeaveBalanceSummary && (
+          <Paper elevation={1} sx={{ padding: 1, marginTop: 2 }}>
+            <Typography variant="h6" sx={{ marginBottom: 1, fontWeight: "bold" }}>
+              IWO Details
+            </Typography>
+            {isLoading ? (
+              <Typography>Loading...</Typography>
+            ) : (
+              <Table size="small" sx={{ width: "100%", tableLayout: "fixed" }}>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#1976d2", color: "white" }}>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                        color: "white",
+                        padding: "8px", // Adjust padding for all columns
+                      }}
+                    >
+                      IWO No
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                        color: "white",
+                        textAlign: "right",
+                        padding: "8px", // Adjust padding for the Total column
+                      }}
+                    >
+                      Job_No
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                        color: "white",
+                        textAlign: "right",
+                        padding: "8px", // Adjust padding for the Taken column
+                      }}
+                    >
+                      Status
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                        color: "white",
+                        textAlign: "right",
+                        padding: "8px", // Adjust padding for the Balance column
+                      }}
+                    >
+                     Start Date
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                        color: "white",
+                        textAlign: "right",
+                        padding: "8px", // Adjust padding for the Balance column
+                      }}
+                    >
+                      End Date
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                        color: "white",
+                        textAlign: "center",
+                        padding: "8px", // Adjust padding for the Action button column
+                      }}
+                    >
+                      Action
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {leaveBalanceData.map((row, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{row.Description}   999999</TableCell>
+                      <TableCell sx={{ textAlign: "right", padding: "8px" }}>
+                      NC/0209
+                      </TableCell>
+                      <TableCell sx={{ textAlign: "center", padding: "8px" }}>
+                        Stand By
+                      </TableCell>
+                      <TableCell sx={{ textAlign: "right", padding: "8px" }}>
+                        2025-01-03
+                      </TableCell>
+                      <TableCell sx={{ textAlign: "right", padding: "8px" }}>
+                      2025-01-04
+                      </TableCell>
+                      <TableCell sx={{ textAlign: "center", padding: "8px" }}>
+                        <Button
+                          variant="outlined"
+                        //   onClick={() => {
+                        //     setModalTitle(`${row.Description} Details`);
+                        //     fetchLeaveDetails(row.Type, year);
+                        //     setOpenModal(true);
+                        //   }}
+                          sx={{
+                            backgroundColor: "#5ac8fa",
+                            "&:hover": { backgroundColor: "#5ac8fa" },
+                            color: "white",
+                            borderColor: "#5ac8fa",
+                            padding: "4px",
+                            minWidth: "auto",
+                            borderRadius: "50%",
+                          }}
+                        >
+                          <Visibility sx={{ fontSize: "16px" }} />{" "}
+                          {/* Smaller icon size */}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow>
+                    {/* <TableCell sx={{ fontWeight: "bold" }}>Total</TableCell> */}
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        textAlign: "right",
+                        padding: "8px",
+                      }}
+                    >
+                      {/* {totalLeave} */}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        textAlign: "right",
+                        padding: "8px",
+                      }}
+                    >
+                      {/* {totalTakenLeave} */}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        textAlign: "right",
+                        padding: "8px",
+                      }}
+                    >
+                      {/* {totalBalanceLeave} */}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: "bold",
+                        textAlign: "right",
+                        padding: "8px",
+                      }}
+                    >
+                      {/* {totalBalanceLeave} */}
+                    </TableCell>
+                    {/* <TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outlined"
+                        //   onClick={handleDesignButtonClick}
+                          sx={{
+                            backgroundColor: "#5ac8fa",
+                            "&:hover": { backgroundColor: "#5ac8fa" },
+                            color: "white",
+                            borderColor: "#5ac8fa",
+                            padding: "4px",
+                            minWidth: "auto",
+                            borderRadius: "50%",
+                            marginLeft: "-5px",
+                          }}
+                        >
+                          <DesignServices sx={{ fontSize: "16px" }} />
+                        </Button>
+                      </TableCell>
+                    </TableCell> */}
+                  </TableRow>
+                </TableBody>
+              </Table>
+            )}
+          </Paper>
+        )}
+        {/* <Box
+          flex={1}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 1,
+            mt: 1,
+            mb: 1,
+            mr: 1,
+          }}
+        ></Box> */}
+        {/* <Paper elevation={3} sx={{ padding: 2 }}>
+          <Typography variant="h6" sx={{ marginBottom: 2, fontWeight: "bold" }}>
+            {selectedTab === "IwoApp" && "Leave Balance Summary"}
+            {selectedTab === "EwoApp" && "EwoApp Summary"}
+            {selectedTab === "MocApp" && "Not Entered Leave Summary"}
+            {selectedTab === "UmrApp" && "Leave Summary"}
+          </Typography>
+          {isLoading ? (
+            <Typography>Loading...</Typography>
+          ) : (
+            <>
+              {selectedTab === "IwoApp" && <IwoApp />}
+              {selectedTab === "EwoApp" && <EwoApp />}
+              {selectedTab === "MocApp" && (
+                <MocApp selectedYear={year} />
+              )}
+              {selectedTab === "UmrApp" && <UmrApp />}
+            </>
+          )}
+        </Paper> */}
+        {openLeaveSummaryModal && (
+          <LeaveSummaryModal
+            open={openLeaveSummaryModal}
+            onClose={() => setOpenLeaveSummaryModal(false)}
+          />
+        )}
+  
+        {openModal && (
+          <LeaveDetailsModal
+            open={openModal}
+            onClose={() => setOpenModal(false)}
+            rowData={leaveDetailsData}
+            modalTitle={modalTitle}
+          />
+        )}
+      </Box>
+    );
+}
+
+export default Approvals

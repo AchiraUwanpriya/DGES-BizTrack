@@ -1,0 +1,8 @@
+export const BANNER_REQUEST = "BANNER_REQUEST";
+export const BANNER_SUCCESS = "BANNER_SUCCESS";
+export const BANNER_FAIL = "BANNER_FAIL";
+
+export const GET_USER_REQUEST = "GET_USER_REQUEST";
+export const GET_USER_SUCCESS = "GET_USER_SUCCESS";
+export const GET_USER_FAIL = "GET_USER_FAIL";
+

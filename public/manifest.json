@@ -1,0 +1,25 @@
+{
+  "name": "BizTrack",
+  "short_name": "BizTrack",
+  "start_url": ".",
+  "background_color": "#ffff",
+  "theme_color": "#fff",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "logo16",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "logo192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

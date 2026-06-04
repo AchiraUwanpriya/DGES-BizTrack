@@ -1,0 +1,159 @@
+@import url(https://fonts.googleapis.com/css?family=Quattrocento+Sans);
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  /* height: 100vh; */
+  /* background-color: #FFFFFF; */
+}
+
+.spinner {
+  margin: auto;
+  /* border: 20px solid #EAF0F6; */
+  border: 5px solid #efb300;
+  border-radius: 50%;
+  border-top: 5px solid #004aad;
+  width: 100px;
+  height: 100px;
+  animation: spinner 2s linear infinite;
+}
+
+@keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loader img {
+  position: absolute;
+  width: 50px; /* Adjust the size of your logo */
+  height: 50px; /* Adjust the size of your logo */
+  z-index: 1; /* Place the logo above the spinner */
+}
+
+@import url(https://fonts.googleapis.com/css?family=Quattrocento+Sans);
+
+.loadingMain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #004aad;
+  z-index: 9999;
+}
+
+.loading-text {
+  /* position: absolute; */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  text-align: center;
+  width: 100%;
+  height: 100px;
+  line-height: 100px;
+}
+
+.loading-text span {
+  display: inline-block;
+  margin: 0 5px;
+  color: #fff;
+  font-family: "Quattrocento Sans", sans-serif;
+}
+
+.loading-text div {
+  display: inline-block;
+  margin: 0 5px;
+  color: #fff;
+  font-family: "Quattrocento Sans", sans-serif;
+}
+
+
+@keyframes blur-text {
+  0%,
+  100% {
+    filter: blur(0px);
+  }
+  50% {
+    filter: blur(4px);
+  }
+}
+
+.loading-text span:nth-child(1) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 0s infinite linear alternate;
+  animation: blur-text 1.5s 0s infinite linear alternate;
+}
+.loading-text span:nth-child(2) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 0.2s infinite linear alternate;
+  animation: blur-text 1.5s 0.2s infinite linear alternate;
+}
+.loading-text span:nth-child(3) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 0.4s infinite linear alternate;
+  animation: blur-text 1.5s 0.4s infinite linear alternate;
+}
+.loading-text span:nth-child(4) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 0.6s infinite linear alternate;
+  animation: blur-text 1.5s 0.6s infinite linear alternate;
+}
+.loading-text span:nth-child(5) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 0.8s infinite linear alternate;
+  animation: blur-text 1.5s 0.8s infinite linear alternate;
+}
+.loading-text span:nth-child(6) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 1s infinite linear alternate;
+  animation: blur-text 1.5s 1s infinite linear alternate;
+}
+.loading-text span:nth-child(7) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 1.2s infinite linear alternate;
+  animation: blur-text 1.5s 1.2s infinite linear alternate;
+}
+.loading-text span:nth-child(8) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 1.4s infinite linear alternate;
+  animation: blur-text 1.5s 1.4s infinite linear alternate;
+}
+.loading-text span:nth-child(9) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 1.6s infinite linear alternate;
+  animation: blur-text 1.5s 1.6s infinite linear alternate;
+}
+.loading-text span:nth-child(10) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 1.8s infinite linear alternate;
+  animation: blur-text 1.5s 1.8s infinite linear alternate;
+}
+.loading-text span:nth-child(11) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 2s infinite linear alternate;
+  animation: blur-text 1.5s 2s infinite linear alternate;
+}
+.loading-text span:nth-child(12) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 2.2s infinite linear alternate;
+  animation: blur-text 1.5s 2.2s infinite linear alternate;
+}
+.loading-text span:nth-child(13) {
+  filter: blur(0px);
+  -webkit-animation: blur-text 1.5s 2.4s infinite linear alternate;
+  animation: blur-text 1.5s 2.4s infinite linear alternate;
+}

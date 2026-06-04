@@ -1,0 +1,58 @@
+.force-update-btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+  color: #007bff;
+  font-weight: 500;
+  min-height: 0px;
+  width: 38px;
+  height: 50px;
+  padding: 0;
+  outline: none;
+}
+
+
+.force-update-btn:hover {
+  background: #007bff;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.force-update-btn:active {
+  transform: translateY(0);
+}
+
+.force-update-btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.force-update-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.force-update-btn .spinning {
+  animation: spin 1s linear infinite;
+}
+
+.btn-text {
+  white-space: nowrap;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
