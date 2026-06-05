@@ -1,0 +1,16 @@
+Options -MultiViews
+RewriteEngine On
+RewriteBase /
+
+# Rewrite /gps-proxy/... requests to gps-proxy.php
+RewriteRule ^gps-proxy(/.*)?$ gps-proxy.php [L]
+
+# Allow PHP proxy script to run — do NOT rewrite to index.html
+RewriteRule ^gps-proxy\.php$ - [L]
+
+# Serve existing files/directories directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# All other routes → React's index.html (client-side routing)
+RewriteRule . /index.html [L]

@@ -7,10 +7,11 @@ import { CircularProgress, Box, IconButton, Typography, Button } from "@mui/mate
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 
-// Relative URL — served through the React dev server proxy (src/setupProxy.js).
-// Works on every device (iOS, Android, desktop).
-const PROXY_URL =
-  "/gps-proxy/index.php?au=17D49774E905C0B2484BCD68401BCA34&m=true";
+// The unified proxy path works identically in development (Node dev server middleware)
+// and production (Hostinger Apache rewrite to gps-proxy.php).
+// process.env.PUBLIC_URL dynamically accommodates subfolder deployments.
+const PUBLIC_URL = process.env.PUBLIC_URL || "";
+const PROXY_URL = `${PUBLIC_URL}/gps-proxy/index.php?au=17D49774E905C0B2484BCD68401BCA34&m=true`;
 
 // ── BizTrack theme CSS injected into the GPS iframe ───────────────────────
 // Hides the original purple/blue navbar and sets padding/positions
@@ -117,6 +118,7 @@ function injectTheme(iframe) {
 function VehicalTracking() {
   const navigate = useNavigate();
   const [status, setStatus] = useState("loading"); // "loading" | "ready" | "error"
+  const [errorDetail, setErrorDetail] = useState("");
   const iframeRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -304,15 +306,42 @@ function VehicalTracking() {
         iframeRef.current?.contentDocument ||
         iframeRef.current?.contentWindow?.document;
       const title = iframeDoc?.title || "";
+
+      // If the iframe loaded the React app itself (proxy failed → .htaccess served index.html)
       if (
         title.toLowerCase().includes("biztrack") ||
         title.toLowerCase().includes("react app")
       ) {
+        setErrorDetail(
+          process.env.NODE_ENV === "production"
+            ? "The GPS proxy script (gps-proxy.php) may not be deployed or PHP cURL is not enabled. Visit yourdomain.com/gps-proxy.php?diag=1 to diagnose."
+            : "Proxy misconfiguration. Check that setupProxy.js is running (npm start)."
+        );
         setStatus("error");
         return;
       }
+
+      // Verify GPS-specific content loaded (extra safety check)
+      const hasGpsMap = !!(
+        iframeDoc?.getElementById("map") ||
+        iframeDoc?.getElementById("page_map") ||
+        iframeDoc?.querySelector(".leaflet-container") ||
+        iframeDoc?.querySelector(".page-map")
+      );
+
+      // Also accept pages that have the GPS navbar (menu page, etc.)
+      const hasGpsNav = !!(
+        iframeDoc?.querySelector(".navbar-default") ||
+        iframeDoc?.querySelector("#page_menu")
+      );
+
+      if (!hasGpsMap && !hasGpsNav && title === "") {
+        // Empty page or unrecognised content — still try, might be an interstitial
+      }
+
       injectTheme(iframeRef.current);
     } catch (_) {
+      // Cross-origin guard (shouldn't happen via proxy — treat as success)
       injectTheme(iframeRef.current);
     }
     setStatus("ready");
@@ -473,9 +502,24 @@ function VehicalTracking() {
             Tracker Unavailable
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            The GPS proxy is not responding. Please restart the dev server
-            and try again.
+            Could not load the GPS tracker. Please try again.
           </Typography>
+          {errorDetail ? (
+            <Typography
+              variant="caption"
+              sx={{
+                color: "#b45309",
+                backgroundColor: "#fef3c7",
+                px: 1.5,
+                py: 1,
+                borderRadius: 2,
+                maxWidth: 320,
+                wordBreak: "break-word",
+              }}
+            >
+              {errorDetail}
+            </Typography>
+          ) : null}
           <Button
             variant="contained"
             startIcon={<RefreshRoundedIcon />}
