@@ -1,0 +1,903 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="robots" content="noindex">
+	<meta name="googlebot" content="noindex">
+	<title>Track My Car | GPS Tracking System 3.23</title>
+	
+	<link rel="shortcut icon" href="https://gps.trackmycar.lk/favicon.ico" type="image/x-icon">	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	
+	<link type="text/css" href="../theme/leaflet/leaflet.css?v=3230" rel="Stylesheet" />
+	<link type="text/css" href="../theme/leaflet/markercluster.css?v=3230" rel="Stylesheet" />
+    
+    <link type="text/css" href="theme/bootstrap.css?v=3230" rel="stylesheet">
+	<link type="text/css" href="theme/datetimepicker.css?v=3230" rel="stylesheet">
+	<link type="text/css" href="theme/style.css?v=3230" rel="stylesheet">
+	<link type="text/css" href="theme/style.custom.php?v=3230" rel="Stylesheet" />
+	
+	<script src="https://maps.google.com/maps/api/js?key=AIzaSyDnmF3TBIBGddMbyRVTNl3nYApRZoYRdaE"></script>		
+			
+	<script type="text/javascript" src="../js/leaflet/leaflet.js?v=3230"></script>
+	<script type="text/javascript" src="../js/es6-promise.min.js?v=3230"></script>
+	<script>ES6Promise.polyfill();</script>
+	
+	<script type="text/javascript" src="../js/leaflet/tile/google.js?v=3230"></script>
+	<script type="text/javascript" src="../js/leaflet/tile/bing.js?v=3230"></script>
+	<script type="text/javascript" src="../js/leaflet/tile/yandex.js?v=3230"></script>
+	<script type="text/javascript" src="../js/leaflet/leaflet.markercluster.js?v=3230"></script>
+	<script type="text/javascript" src="../js/leaflet/marker.rotate.js?v=3230"></script>
+	<script type="text/javascript" src="../js/leaflet/l.kml.js?v=3230"></script>
+	
+		
+	<script type="text/javascript" src="../js/jquery-2.1.4.min.js?v=3230"></script>
+	<script type="text/javascript" src="../js/jquery-migrate-1.2.1.min.js?v=3230"></script>
+	
+	<script type="text/javascript" src="../js/jquery.flot.min.js?v=3230"></script>
+    <script type="text/javascript" src="../js/jquery.flot.navigate.min.js?v=3230"></script>
+	<script type="text/javascript" src="../js/jquery.flot.time.min.js?v=3230"></script>
+    <script type="text/javascript" src="../js/jquery.flot.resize.min.js?v=3230"></script>
+	
+	<script type="text/javascript" src="../js/moment.min.js?v=3230"></script>
+        
+	<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+	<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+	<!--[if lt IE 9]>
+		<script type="text/javascript" src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js?v=3230"></script>
+		<script type="text/javascript" src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js?v=3230"></script>
+	<![endif]-->
+	
+	<!-- Include all compiled plugins (below), or include individual files as needed -->
+	<script type="text/javascript" src="js/bootstrap.min.js?v=3230"></script>
+	<script type="text/javascript" src="js/bootbox.min.js?v=3230"></script>
+	<script type="text/javascript" src="js/datetimepicker.min.js?v=3230"></script>
+	
+	<script type="text/javascript" src="../js/gs.config.js?v=3230"></script>
+	<script type="text/javascript" src="../js/gs.common.js?v=3230"></script>
+	<script type="text/javascript" src="js/gs.connect.js?v=3230"></script>
+	
+	        	<script type="text/javascript" src="js/gs.main.js?v=3230"></script>
+    </head>
+
+<body onload="load()" onUnload="unload()">
+        <nav class="navbar navbar-default navbar-fixed-top">
+		<div class="container-fluid">
+			<a href="#" class="show-menu icon-only pull-left" onclick="switchPage('menu');">
+				<i class="glyphicon glyphicon-menu-hamburger"></i>
+			</a>
+			
+			<div class="navbar-header pull-right">
+				<select id="map_layer" class="navbar-btn form-control" onChange="switchMapLayer($(this).val());"></select>
+			</div>
+			
+			<div class="navbar-header pull-right">
+				<select id="event_list_page" class="navbar-btn form-control" style="display: none;" onChange="eventsLoadList();">
+					<option value="1">1</option>
+				</select>
+			</div>
+			
+			<div class="navbar-header pull-right">
+				<select id="marker_list_page" class="navbar-btn form-control" style="display: none;" onChange="placesMarkerLoadList();">
+					<option value="1">1</option>
+				</select>
+			</div>
+			
+			<div class="navbar-header pull-right">
+				<select id="route_list_page" class="navbar-btn form-control" style="display: none;" onChange="placesRouteLoadList();">
+					<option value="1">1</option>
+				</select>
+			</div>
+			
+			<div class="navbar-header pull-right">
+				<select id="zone_list_page" class="navbar-btn form-control" style="display: none;" onChange="placesZoneLoadList();">
+					<option value="1">1</option>
+				</select>
+			</div>
+			
+			<div class="navbar-header">
+				<div class="navbar-brand">
+					<div id="page_title">
+						Map					</div>
+				</div>
+			</div>	
+		</div>
+        </nav>
+	
+	<div id="loading_panel">
+		<div class="table">
+			<div class="table-cell center-middle">
+				<div class="loader">
+					<span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div id="loading_data_panel" style="display: none;">
+		<div class="table">
+			<div class="table-cell center-middle">
+				<div class="loader">
+					<span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div id="dt_picker"></div>
+	
+	<div id="page_map" class="page-map">
+		<div id="map"></div>
+		
+		<div id="bottom_panel">
+			<div class="datalist-object-name">
+				<span id="bottom_panel_datalist_object_name"></span>
+				<a href="#" onclick="datalistBottomHidePanel();"><span class="datalist-object-name-close-icon icon-close"></span></a>
+			</div>
+			<div id="bottom_panel_datalist" class="datalist">
+				<div id="bottom_panel_datalist_object_data_list" class="datalist-item-list"></div>	
+			</div>			
+		</div>
+		
+		<div id="graph_panel" class="graph-panel">
+			<div class="graph-controls">
+				<div class="graph-controls-left">
+					<select class="form-control" style="min-width:100px;" id="graph_panel_data_source" onchange="historyRouteChangeGraphSource();"></select>
+				</div>
+				<div class="graph-controls-right">
+					<a href="#" onclick="graphPanLeft();" title="Pan left">
+						<img src="../theme/images/arrow-left.svg" width="16px" border="0"/>
+					</a>
+					
+					<a href="#" onclick="graphPanRight();" title="Pan right">
+						<img src="../theme/images/arrow-right.svg" width="16px" border="0"/>
+					</a>
+					  
+					<a href="#" onclick="graphZoomIn();" title="Zoom in">
+						<img src="../theme/images/plus.svg" width="16px" border="0"/>
+					</a>
+					
+					<a href="#" onclick="graphZoomOut();" title="Zoom out">
+						<img src="../theme/images/minus.svg" width="16px" border="0"/>
+					</a>
+				</div>
+			</div>
+			
+			<span id="graph_panel_label" class="graph-panel-label"></span>
+						
+			<div id="graph_panel_plot" class="graph-panel-plot"></div>
+		</div>
+		
+		<div id="details_panel" class="details-panel">
+			<div id="details_panel_detail_list" class="panel panel-default"></div>
+			<div id="details_panel_detail_ext_list" class="list-group"></div>
+		</div>
+		
+		<div id="history_playback">
+			<div class="container-fluid">
+				<div class="row vertical-align">
+					<a onclick="historyRoutePlay();">
+						<i class="glyphicon glyphicon-play"></i>
+					</a>
+					<a onclick="historyRoutePause();">
+						<i class="glyphicon glyphicon-pause"></i>
+					</a>
+					<a onclick="historyRouteStop();">
+						<i class="glyphicon glyphicon-stop"></i>
+					</a>
+					
+					<select id="history_playback_play_speed" class="form-control">
+						<option value=1>x1</option>
+						<option value=2>x2</option>
+						<option value=3>x3</option>
+						<option value=4>x4</option>
+						<option value=5>x5</option>
+						<option value=6>x6</option>
+					</select>	
+				</div>
+			</div>
+		</div>
+		
+		<nav id="history_navbar" class="navbar navbar-default navbar-fixed-bottom">
+			<div class="container-fluid">
+				<div class="row vertical-align">
+					<div id="history_navbar_map" class="width33">
+						<a href="#" class="btn btn-default dropdown-toggle" onclick="hideHistoryPanels();">
+							<i class="glyphicon glyphicon-globe"></i>
+							Map						</a>
+					</div>
+					<div id="history_navbar_graph" class="width33">
+						<a href="#" class="btn btn-default dropdown-toggle" onclick="showHistoryGraphPanel();">
+							<i class="glyphicon glyphicon-signal"></i>
+							Graph						</a>
+					</div>
+					<div id="history_navbar_details" class="width33">
+						<a href="#" class="btn btn-default dropdown-toggle" onclick="showHistoryDetailsPanel();">
+							<i class="glyphicon glyphicon-road"></i>
+							Route						</a>
+					</div>
+					<div class="width33">
+						<a href="#" class="btn btn-default dropdown-toggle" onclick="historyHideRoute();">
+							<i class="glyphicon glyphicon-remove"></i>
+							Hide						</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+	</div>
+	
+	<div id="page_menu" class="page-menu">
+        <div class="menu-block">
+                <div class="title-block">
+                        <div class="page-title">Menu</div>
+                        <a href="#" onclick="hideMenuPage();">
+                                <i class="glyphicon glyphicon-remove"></i>
+                        </a>
+                </div>
+                
+                <ul class="menu clearfix"> 
+                        <li>
+                                <a href="#" id="page_menu_map" onclick="switchPage('map');">
+                                        <i class="glyphicon glyphicon-globe"></i>
+                                        Map	
+                                </a>
+                        </li>  
+                        <li>
+                                <a href="#" id="page_menu_objects" onclick="switchPage('objects');">
+                                        <i class="glyphicon glyphicon-map-marker"></i>
+                                        Objects                                </a>
+                        </li>
+                        <li>
+                                <a href="#" id="page_menu_events" onclick="switchPage('events');">
+                                        <i class="glyphicon glyphicon-alert"></i>
+                                        Events                                </a>
+                        </li>
+                        <li>
+                                <a href="#" id="page_menu_places" onclick="switchPage('places');">
+                                        <i class="glyphicon glyphicon-flag"></i>
+                                        Places                                </a>
+                        </li>
+                        <li>
+                                <a href="#" id="page_menu_history" onclick="switchPage('history');">
+                                        <i class="glyphicon glyphicon-history"></i>
+                                        History                                </a>
+                        </li>                         
+                        <li>
+                                <a href="#" id="page_menu_object_control" onclick="switchPage('object_control');">
+                                        <i class="glyphicon glyphicon-send"></i>
+                                        Object control                                </a>
+                        </li>
+                        <li>
+                                <a href="#" id="page_menu_settings" onclick="switchPage('settings');">
+                                        <i class="glyphicon glyphicon-cog"></i>
+                                        Settings                                </a>
+                        </li> 
+                </ul>
+                                
+                <div class="button-block">
+                                                <a style="margin-right: 15px;" class="desktop-btn" href="../tracking.php" data-ajax="false">
+                                <i class="glyphicon glyphicon-desktop"></i>
+                                Desktop version                        </a>
+                                                
+                        <a class="logout-btn" href="" onClick="connectLogout();">
+                                <i class="glyphicon glyphicon-exit"></i>
+                                Log out                        </a>
+                </div>
+        </div>
+</div>	<div id="page_objects" class="page">
+	<form role="form">
+		<div class="input-group form-group btn-group">
+			<input id="page_object_search" class="form-control" type="search" placeholder="Search..." onkeyup="objectLoadList();"/>
+			<span id="page_object_search_clear" class="input-group-addon">
+				<span class="glyphicon glyphicon-remove"></span>
+			</span>
+		</div>
+		
+		<div id="page_object_list_header">			
+			<select id="page_object_list_group" class="form-control object-group" onChange="objectLoadList();"></select>
+			
+			<li class="list-group-item">
+				<div class="row vertical-align">
+					<div class="object-list-item">
+						<div class="right">						
+							<div class="visible checked" id="object_visible_all" onClick="objectVisibleAllToggle();">
+								<span class="[ glyphicon glyphicon-ok ]"></span>
+							</div>
+							
+							<div class="follow" id="object_follow_all" onClick="objectFollowAllToggle();">
+								<span class="[ glyphicon glyphicon-search ]"></span>
+							</div>
+							
+							<div class="details"></div>
+						</div>
+					</div>				
+				</div>
+			</li>	
+		</div>			
+		
+		<div id="page_object_list" class="list-group"></div>
+	</form>
+	
+	<a href="#" class="btn btn-default btn-blue show-menu pull-right back-btn" onclick="switchPage('menu');">
+		<i class="glyphicon glyphicon-menu-left"></i>
+		Back	</a>
+</div>
+
+<div id="page_object_details" class="page">
+	<div id="page_object_detail_list" class="panel panel-default"></div>
+	<a href="#" class="btn btn-default btn-blue show-menu pull-right back-btn" onclick="switchPage('objects');">
+		<i class="glyphicon glyphicon-menu-left"></i>
+		Back	</a>
+</div>	<div id="page_events" class="page">
+	<form role="form">
+		<div class="input-group form-group btn-group">
+			<input id="page_event_search" class="form-control" type="search" placeholder="Search..." onkeyup="eventsLoadList();"/>
+			<span id="page_event_search_clear" class="input-group-addon">
+				<span class="glyphicon glyphicon-remove"></span>
+			</span>
+		</div>
+		<div id="page_event_list" class="list-group"></div>
+	</form>
+	<a href="#" class="btn btn-default btn-blue show-menu pull-right back-btn" onclick="switchPage('menu');">
+		<i class="glyphicon glyphicon-menu-left"></i>
+		Back	</a>
+</div>	<div id="page_places" class="page">
+	<div id="markers_panel" class="markers-panel">
+		<form role="form">
+			<div class="input-group form-group btn-group">
+				<input id="page_markers_panel_search" class="form-control" type="search" placeholder="Search..." onkeyup="placesMarkerLoadList();"/>
+				<span id="page_markers_panel_search_clear" class="input-group-addon">
+					<span class="glyphicon glyphicon-remove"></span>
+				</span>
+			</div>
+			<div id="page_markers_panel_list" class="list-group"></div>
+		</form>
+	</div>
+	
+	<div id="routes_panel" class="routes-panel">
+		<form role="form">
+			<div class="input-group form-group btn-group">
+				<input id="page_routes_panel_search" class="form-control" type="search" placeholder="Search..." onkeyup="placesRouteLoadList();"/>
+				<span id="page_routes_panel_search_clear" class="input-group-addon">
+					<span class="glyphicon glyphicon-remove"></span>
+				</span>
+			</div>
+			<div id="page_routes_panel_list" class="list-group"></div>
+		</form>
+	</div>
+	
+	<div id="zones_panel" class="zones-panel">
+		<form role="form">
+			<div class="input-group form-group btn-group">
+				<input id="page_zones_panel_search" class="form-control" type="search" placeholder="Search..." onkeyup="placesZoneLoadList();"/>
+				<span id="page_zones_panel_search_clear" class="input-group-addon">
+					<span class="glyphicon glyphicon-remove"></span>
+				</span>
+			</div>
+			<div id="page_zones_panel_list" class="list-group"></div>
+		</form>
+	</div>
+	
+	<nav id="places_navbar" class="navbar navbar-default navbar-fixed-bottom">
+		<div class="container-fluid">
+			<div class="row vertical-align">
+				<div class="width33">
+					<a href="#" class="btn btn-default dropdown-toggle" onclick="showPlacesMarkersPanel();">
+						<i class="glyphicon glyphicon-map-marker"></i>
+						Markers					</a>
+				</div>
+				<div class="width33">
+					<a href="#" class="btn btn-default dropdown-toggle" onclick="showPlacesRoutesPanel();">
+						<i class="glyphicon glyphicon-road"></i>
+						Routes					</a>
+				</div>
+				<div class="width33">
+					<a href="#" class="btn btn-default dropdown-toggle" onclick="showPlacesZonesPanel();">
+						<i class="glyphicon glyphicon-unchecked"></i>
+						Zones					</a>
+				</div>
+			</div>
+		</div>
+	</nav>
+</div>	<div id="page_history" class="page">
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Object			</div>
+			<div class="col-xs-6">
+				<select id="page_history_object_list" class="form-control"></select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Filter			</div>
+			<div class="col-xs-6">
+				<select id="page_history_filter" class="form-control" onChange="switchDateFilter('history');">
+					<option value="0" selected>&nbsp;</option>
+					<option value="1">Last hour</option>
+					<option value="2">Today</option>
+					<option value="3">Yesterday</option>
+					<option value="4">Before 2 days</option>
+					<option value="5">Before 3 days</option>
+					<option value="6">This week</option>
+					<option value="7">Last week</option>
+					<option value="8">This month</option>
+					<option value="9">Last month</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="row vertical-align">
+		<div class="col-xs-6">
+			Time from		</div>
+		<div class="col-xs-6">
+			<div class="form-group">
+				<div class="input-group date">
+				<input type="text" class="form-control" data-field="datetime" id="page_history_date_from" readonly="readonly"/>
+					<span class="input-group-addon">
+						<span class="glyphicon glyphicon-calendar"></span>
+					</span>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="row vertical-align">
+		<div class="col-xs-6">
+			Time to		</div>
+		<div class="col-xs-6">
+			<div class="form-group">
+				<div class="input-group date">
+				<input type="text" class="form-control" data-field="datetime" id="page_history_date_to" readonly="readonly"/>
+					<span class="input-group-addon">
+						<span class="glyphicon glyphicon-calendar"></span>
+					</span>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Stop duration			</div>
+			<div class="col-xs-6">
+				<select id="page_history_stop_duration" class="form-control">
+					<option value="1">> 1 min</option>
+					<option value="2">> 2 min</option>
+					<option value="5">> 5 min</option>
+					<option value="10">> 10 min</option>
+					<option value="20">> 20 min</option>
+					<option value="30">> 30 min</option>
+					<option value="60">> 1 h</option>
+					<option value="120">> 2 h</option>
+					<option value="300">> 5 h</option>
+				</select>
+			</div>
+		</div>	
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Stops			</div>
+			<div class="col-xs-6">
+				<select id="page_history_stops" class="form-control" onChange="historyRouteStops();">
+					<option value="false">No</option>
+					<option value="true" selected>Yes</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Events			</div>
+			<div class="col-xs-6">
+				<select id="page_history_events" class="form-control" onChange="historyRouteEvents();">
+					<option value="false">No</option>
+					<option value="true" selected>Yes</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				<button type="button" class="btn btn-default dropdown-toggle" aria-haspopup="true" aria-expanded="false" onClick="historyLoadRoute();">
+					Show				</button>
+			</div>
+			<div class="col-xs-6">
+				<button type="button" class="btn btn-default dropdown-toggle" aria-haspopup="true" aria-expanded="false" onClick="historyHideRoute();">
+					Hide				</button>
+			</div>
+		</div>
+	</div>
+	
+	<a href="#" class="btn btn-default btn-blue show-menu pull-right back-btn" onclick="switchPage('menu');">
+		<i class="glyphicon glyphicon-menu-left"></i>
+		Back	</a>
+</div>	
+	<div id="page_cmd" class="page">
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Object			</div>
+			<div class="col-xs-6">
+				<select id="page_cmd_object_list" onchange="cmdTemplateList();" class="form-control"></select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Template			</div>
+			<div class="col-xs-6">
+				<select id="page_cmd_template_list" onchange="cmdTemplateSwitch();" class="form-control"></select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Gateway			</div>
+			<div class="col-xs-6">
+				<select id="page_cmd_gateway" class="form-control">
+					<option value="gprs">GPRS</option>
+					<option value="sms">SMS</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Type			</div>
+			<div class="col-xs-6">
+				<select id="page_cmd_type" class="form-control">
+					<option value="ascii">ASCII</option>
+					<option value="hex">HEX</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Command			</div>
+			<div class="col-xs-6">
+				<input id="page_cmd_cmd" class="form-control" type="text" value="" maxlength="256">
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-12">
+				<button type="button" class="btn btn-default dropdown-toggle" aria-haspopup="true" aria-expanded="false" onclick="cmdSend();">
+					Send				</button>
+			</div>
+		</div>
+	</div>
+	
+	<a href="#" class="btn btn-default btn-blue show-menu pull-right back-btn" onclick="switchPage('menu');">
+		<i class="glyphicon glyphicon-menu-left"></i>
+		Back	</a>
+</div>	<div id="page_settings" class="page">
+	
+	<div style="display: none;">		<h4>Notifications</h4>
+		
+		<div class="form-group">
+			<div class="row vertical-align">
+				<div class="col-xs-6">
+					Push notifications				</div>
+				<div class="col-xs-6">
+					<select id="page_settings_push_notify_mobile" class="form-control" onChange="settingsPushWarning();">
+						<option value="false">No</option>
+						<option value="true" selected>Yes</option>
+					</select>
+				</div>
+			</div>
+		</div>
+		
+		<div class="form-group">
+			<div class="row vertical-align">
+				<div class="col-xs-6">
+					Push notifications interval				</div>
+				<div class="col-xs-6">
+					<select id="page_settings_push_notify_mobile_interval" class="form-control">
+						<option value="1">1 min</option>
+						<option value="2">2 min</option>
+						<option value="5">5 min</option>
+						<option value="10">10 min</option>
+						<option value="20">20 min</option>
+						<option value="30">30 min</option>
+						<option value="60">1 h</option>
+					</select>
+				</div>
+			</div>
+		</div>
+	</div>
+		
+	<h4>Map</h4>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Map startup position			</div>
+			<div class="col-xs-6">
+				<select id="page_settings_map_startup_possition" class="form-control">
+					<option value="default">Default</option>
+					<option value="last">Remember last</option>
+					<option value="fit">Fit objects</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Map icon size			</div>
+			<div class="col-xs-6">
+				<select id="page_settings_map_icon_size" class="form-control">
+					<option value="1">100%</option>
+					<option value="1.25">125%</option>
+					<option value="1.5">150%</option>
+					<option value="1.75">175%</option>
+					<option value="2">200%</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<h4>Other</h4>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Startup tab			</div>
+			<div class="col-xs-6">
+				<select id="page_settings_startup_tab" class="form-control">
+					<option value="map">Map</option>
+					<option value="objects">Objects</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Language			</div>
+			<div class="col-xs-6">
+				<select id="page_settings_language" class="form-control">
+					<option value="english">English</option><option value="sinhala">Sinhala</option>				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Unit of distance			</div>
+			<div class="col-xs-6">
+				<select id="page_settings_distance_unit" class="form-control">
+					<option value="km">Kilometer</option>
+					<option value="mi">Mile</option>
+					<option value="nm">Nautical mile</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Unit of capacity			</div>
+			<div class="col-xs-6">
+				<select id="page_settings_capacity_unit" class="form-control">
+					<option value="l">Liter</option>
+					<option value="g">Gallon</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Unit of temperature			</div>
+			<div class="col-xs-6">
+				<select id="page_settings_temperature_unit" class="form-control">
+					<option value="c">Celsius</option>
+					<option value="f">Fahrenheit</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Time zone			</div>
+			<div class="col-xs-6">
+				<select id="page_settings_timezone" class="form-control">
+					<option value="- 12 hour">(UTC -12:00)</option>
+<option value="- 11 hour">(UTC -11:00)</option>
+<option value="- 10 hour - 30 minutes">(UTC -10:30)</option>
+<option value="- 10 hour">(UTC -10:00)</option>
+<option value="- 9 hour">(UTC -9:00)</option>
+<option value="- 8 hour">(UTC -8:00)</option>
+<option value="- 7 hour">(UTC -7:00)</option>
+<option value="- 6 hour">(UTC -6:00)</option>
+<option value="- 5 hour">(UTC -5:00)</option>
+<option value="- 4 hour - 30 minutes">(UTC -4:30)</option>
+<option value="- 4 hour">(UTC -4:00)</option>
+<option value="- 3 hour - 30 minutes">(UTC -3:30)</option>
+<option value="- 3 hour">(UTC -3:00)</option>
+<option value="- 2 hour">(UTC -2:00)</option>
+<option value="- 1 hour">(UTC -1:00)</option>
+<option value="+ 0 hour">(UTC 0:00)</option>
+<option value="+ 1 hour">(UTC +1:00)</option>
+<option value="+ 2 hour">(UTC +2:00)</option>
+<option value="+ 3 hour">(UTC +3:00)</option>
+<option value="+ 3 hour + 30 minutes">(UTC +3:30)</option>
+<option value="+ 4 hour">(UTC +4:00)</option>
+<option value="+ 4 hour + 30 minutes">(UTC +4:30)</option>
+<option value="+ 4 hour + 45 minutes">(UTC +4:45)</option>
+<option value="+ 5 hour">(UTC +5:00)</option>
+<option value="+ 5 hour + 30 minutes">(UTC +5:30)</option>
+<option value="+ 5 hour + 45 minutes">(UTC +5:45)</option>
+<option value="+ 6 hour">(UTC +6:00)</option>
+<option value="+ 6 hour + 30 minutes">(UTC +6:30)</option>
+<option value="+ 7 hour">(UTC +7:00)</option>
+<option value="+ 8 hour">(UTC +8:00)</option>
+<option value="+ 9 hour">(UTC +9:00)</option>
+<option value="+ 9 hour + 30 minutes">(UTC +9:30)</option>
+<option value="+ 10 hour">(UTC +10:00)</option>
+<option value="+ 10 hour + 30 minutes">(UTC +10:30)</option>
+<option value="+ 11 hour">(UTC +11:00)</option>
+<option value="+ 12 hour">(UTC +12:00)</option>
+<option value="+ 12 hour + 45 minutes">(UTC +12:45)</option>
+<option value="+ 13 hour">(UTC +13:00)</option>
+<option value="+ 14 hour">(UTC +14:00)</option>				</select>
+			</div>
+		</div>
+	</div>
+	
+	<h4>Change password</h4>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Old password			</div>
+			<div class="col-xs-6">
+				<input id="page_settings_old_password" type="password" class="form-control"></input>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				New password			</div>
+			<div class="col-xs-6">
+				<input id="page_settings_new_password" type="password" class="form-control"></input>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-6">
+				Repeat new password			</div>
+			<div class="col-xs-6">
+				<input id="page_settings_new_password_rep" type="password" class="form-control"></input>
+			</div>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<div class="row vertical-align">
+			<div class="col-xs-12">
+				<button type="button" class="btn btn-default dropdown-toggle" aria-haspopup="true" aria-expanded="false" onClick="settingsSave();">
+					Save				</button>
+			</div>
+		</div>
+	</div>
+	
+	<a href="#" class="btn btn-default btn-blue show-menu pull-right back-btn" onclick="switchPage('menu');">
+		<i class="glyphicon glyphicon-menu-left"></i>
+		Back	</a>
+</div>	
+	<!-- Default Statcounter code for Gps.trackmycar.lk Mobile
+https://gps.trackmycar.lk/mobile/ -->
+<script type="text/javascript">
+var sc_project=12022455; 
+var sc_invisible=1; 
+var sc_security="45374662"; 
+</script>
+<script type="text/javascript"
+src="https://www.statcounter.com/counter/counter.js"
+async></script>
+<noscript><div class="statcounter"><a title="free web stats"
+href="https://statcounter.com/" target="_blank"><img
+class="statcounter"
+src="https://c.statcounter.com/12022455/0/45374662/1/"
+alt="free web stats"
+referrerPolicy="no-referrer-when-downgrade"></a></div></noscript>
+<!-- End of Statcounter Code -->
+
+
+<!-- Trackmycar Pro Promo Popup Code -->
+<!-- promo-popup.html -->
+<style>
+  .promo-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;-webkit-tap-highlight-color:transparent}
+  .promo-modal{position:relative;width:min(92vw,400px);border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.25);animation:pop .2s ease-out;-webkit-transform:translateZ(0)}
+  .promo-modal a{display:block;position:relative;z-index:1}
+  .promo-modal img{display:block;width:100%;height:auto;cursor:pointer}
+  .promo-close{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:999px;width:36px;height:36px;font-size:18px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;z-index:2}
+  .promo-count{position:absolute;top:-6px;right:-6px;background:#ff3b30;color:#fff;border-radius:999px;font-size:11px;line-height:1;padding:2px 6px}
+  @keyframes pop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+</style>
+
+<!-- Change data-autoclose to control seconds -->
+<div class="promo-backdrop" id="promoPopup" data-autoclose="10" role="dialog" aria-modal="true" aria-label="New app available">
+  <div class="promo-modal">
+    <!-- Close inside the image -->
+    <button class="promo-close" aria-label="Close"
+      onclick="(function(){var p=document.getElementById('promoPopup'); if(p) p.style.display='none'; if(window.__promoTimer) clearInterval(window.__promoTimer); })()">✕
+      <span class="promo-count" id="promoCountdown">10</span>
+    </button>
+
+    <!-- Per-platform behavior: Android = new tab, iOS = same tab, others try new tab then fallback -->
+    <a href="https://trackmycar.lk/pro?src=From_Old_App_Promo"
+       onclick="(function(a){
+         var ua = navigator.userAgent || '';
+         var isAndroid = /Android/i.test(ua);
+         var isIOS = /iPhone|iPad|iPod/i.test(ua);
+         var url = a.href;
+
+         if (isAndroid) {
+           // Prefer new tab/window for Play Store handoff
+           var w = null; try { w = window.open(url, '_blank', 'noopener'); } catch(e) {}
+           if (!w) location.href = url; // fallback if blocked
+           return false;
+         }
+         if (isIOS) {
+           // Same-tab navigation works best in iOS in-app browsers for App Store deep links
+           location.href = url;
+           return false;
+         }
+         // Desktop/others: try new tab, fallback to same tab
+         window.open(url, '_blank', 'noopener') || (location.href = url);
+         return false;
+       })(this);">
+      <img src="tmc-pro-banner.jpg" alt="Download Trackmycar Pro"
+           onload="(function(){
+             var p=document.getElementById('promoPopup'), cd=document.getElementById('promoCountdown');
+             var secs=parseInt(p.getAttribute('data-autoclose')||'6',10); if(cd) cd.textContent=secs;
+             window.__promoTimer=setInterval(function(){
+               secs--; if(cd) cd.textContent=secs;
+               if(secs<=0){ if(p) p.style.display='none'; clearInterval(window.__promoTimer); }
+             },1000);
+           })()">
+    </a>
+  </div>
+</div>
+	
+</body>
+</html>

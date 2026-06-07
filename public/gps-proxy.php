@@ -151,23 +151,23 @@ function getSessionCookie() {
 }
 
 // ── Build Target URL ──────────────────────────────────────────────────────
-// If routed via /gps-proxy/... rewrite, extract the target path directly
-// from REQUEST_URI to keep query params and directory context intact.
+// If a direct path parameter is provided (e.g. from our HTML URL rewriter), use it.
+// Otherwise, if routed via /gps-proxy/... rewrite, extract the target path.
 $reqUri = $_SERVER['REQUEST_URI'];
 $prefix = '/gps-proxy';
 $gpsPxPos = strpos($reqUri, $prefix);
 
-if ($gpsPxPos !== false) {
+if (isset($_GET['path'])) {
+    $path = $_GET['path'];
+} elseif ($gpsPxPos !== false) {
     $path = substr($reqUri, $gpsPxPos + strlen($prefix));
-    if (substr($path, 0, 1) !== '/') {
+    if (substr($path, 0, 4) === '.php') {
+        $path = '/index.php?au=17D49774E905C0B2484BCD68401BCA34&m=true';
+    } elseif (substr($path, 0, 1) !== '/') {
         $path = '/' . $path;
     }
 } else {
-    // Fallback for direct /gps-proxy.php?path=... calls
-    $path = $_GET['path'] ?? '/index.php?au=17D49774E905C0B2484BCD68401BCA34&m=true';
-    if (substr($path, 0, 1) !== '/') {
-        $path = '/' . $path;
-    }
+    $path = '/index.php?au=17D49774E905C0B2484BCD68401BCA34&m=true';
 }
 
 $targetUrl = GPS_BASE . $path;
@@ -307,8 +307,99 @@ foreach (explode("\r\n", $rawHeaders) as $line) {
 header('X-GPS-Proxy: active');
 header('X-Frame-Options: ALLOWALL');
 
+// ── URL Resolver Helper ──────────────────────────────────────────────────
+function resolveUrl($base, $relative) {
+    if (preg_match('/^(https?:)?\/\//i', $relative)) {
+        return $relative;
+    }
+    if (preg_match('/^(#|javascript:|data:)/i', $relative)) {
+        return $relative;
+    }
+
+    $baseParts = parse_url($base);
+    $basePath = $baseParts['path'] ?? '/';
+
+    if (substr($relative, 0, 1) === '/') {
+        return $relative;
+    }
+
+    $dir = dirname($basePath);
+    if ($dir === '/' || $dir === '\\') {
+        $dir = '';
+    }
+
+    $pathParts = explode('/', $dir);
+    $relParts = explode('/', $relative);
+    
+    foreach ($relParts as $part) {
+        if ($part === '.') {
+            continue;
+        }
+        if ($part === '..') {
+            array_pop($pathParts);
+        } else {
+            $pathParts[] = $part;
+        }
+    }
+
+    $resolvedPath = implode('/', $pathParts);
+    if (substr($resolvedPath, 0, 1) !== '/') {
+        $resolvedPath = '/' . $resolvedPath;
+    }
+    return $resolvedPath;
+}
+
+// ── Response Rewriting ────────────────────────────────────────────────────
+// Rewrite relative and root-relative resources to go through /gps-proxy.php?path=...
+// which avoids Hostinger's Nginx frontend static file interception/caching.
+$isHtml = (strpos(strtolower($cType), 'text/html') !== false);
+$isCss  = (strpos(strtolower($cType), 'text/css') !== false);
+
+if ($isHtml) {
+    $body = preg_replace_callback(
+        '/(href|src|action)\s*=\s*(["\'])(.*?)\2/i',
+        function ($matches) use ($targetUrl) {
+            $attr = $matches[1];
+            $quote = $matches[2];
+            $url = $matches[3];
+
+            if (preg_match('/^(https?:)?\/\//i', $url) || 
+                substr($url, 0, 1) === '#' || 
+                substr($url, 0, 11) === 'javascript:' || 
+                substr($url, 0, 5) === 'data:') {
+                return $matches[0];
+            }
+
+            $resolvedPath = resolveUrl($targetUrl, $url);
+            $scriptName = $_SERVER['SCRIPT_NAME'];
+            $rewrittenUrl = $scriptName . '?path=' . urlencode($resolvedPath);
+
+            return $attr . '=' . $quote . $rewrittenUrl . $quote;
+        },
+        $body
+    );
+} elseif ($isCss) {
+    $body = preg_replace_callback(
+        '/url\(\s*([\'"]?)(.*?)\1\s*\)/i',
+        function ($matches) use ($targetUrl) {
+            $quote = $matches[1];
+            $url = $matches[2];
+
+            if (preg_match('/^(https?:)?\/\//i', $url) || substr($url, 0, 5) === 'data:') {
+                return $matches[0];
+            }
+
+            $resolvedPath = resolveUrl($targetUrl, $url);
+            $scriptName = $_SERVER['SCRIPT_NAME'];
+            $rewrittenUrl = $scriptName . '?path=' . urlencode($resolvedPath);
+
+            return 'url(' . $quote . $rewrittenUrl . $quote . ')';
+        },
+        $body
+    );
+}
+
 // ── Output ─────────────────────────────────────────────────────────────────
-// Output the body as-is. All relative URLs will resolve to /gps-proxy/...
-// dynamically, so we don't need <base href> injection and avoid CORS.
 echo $body;
+
 

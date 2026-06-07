@@ -1,16 +1,29 @@
 Options -MultiViews
 RewriteEngine On
+
+# ============================================================
+# IMPORTANT: RewriteBase setting
+# ------------------------------------------------------------
+# If your domain/subdomain points DIRECTLY to this folder
+# (e.g. app.yourdomain.com → public_html/biztracktest/)
+#   → keep:  RewriteBase /
+#
+# If accessed as a subfolder path
+# (e.g. yourdomain.com/biztracktest/)
+#   → change to: RewriteBase /biztracktest/
+#   AND update the last rule to: RewriteRule . /biztracktest/index.html [L]
+# ============================================================
 RewriteBase /
 
-# Rewrite /gps-proxy/... requests to gps-proxy.php
-RewriteRule ^gps-proxy(/.*)?$ gps-proxy.php [L]
-
-# Allow PHP proxy script to run — do NOT rewrite to index.html
+# 1. Allow gps-proxy.php to run directly — never rewrite it
 RewriteRule ^gps-proxy\.php$ - [L]
 
-# Serve existing files/directories directly
+# 2. Route ALL /gps-proxy/... requests to gps-proxy.php
+RewriteRule ^gps-proxy(/.*)?$ gps-proxy.php [L]
+
+# 3. Serve existing static files/directories as-is
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# All other routes → React's index.html (client-side routing)
+# 4. All other routes → React app (client-side routing)
 RewriteRule . /index.html [L]
