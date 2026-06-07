@@ -1,8 +1,11 @@
 {
+  "env": {
+    "CI": "false"
+  },
   "rewrites": [
     {
       "source": "/gps-proxy/:path*",
-      "destination": "/api/gps-proxy?path=:path*"
+      "destination": "/api/gps-proxy?path=/:path*"
     },
     {
       "source": "/(.*)",
