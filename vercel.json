@@ -2,6 +2,7 @@
   "env": {
     "CI": "false"
   },
+  "installCommand": "npm install --legacy-peer-deps",
   "rewrites": [
     {
       "source": "/gps-proxy/:path*",
