@@ -59,11 +59,12 @@
     "styled-components": "^5.3.9",
     "sweetalert2": "^11.26.2",
     "tsparticles": "^3.9.1",
-    "tsparticles-slim": "^2.12.0"
+    "tsparticles-slim": "^2.12.0",
+    "axios": "^1.17.0"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "CI=false react-scripts build && node -e \"const fs = require('fs'); if (fs.existsSync('public/.htaccess')) fs.copyFileSync('public/.htaccess', 'build/.htaccess');\"",
+    "build": "node -e \"process.env.CI='false'; require('child_process').execSync('react-scripts build', {stdio: 'inherit'})\" && node -e \"const fs = require('fs'); if (fs.existsSync('public/.htaccess')) fs.copyFileSync('public/.htaccess', 'build/.htaccess');\"",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "proxy": "node proxy-server.js",
@@ -90,7 +91,6 @@
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@types/date-fns": "^2.6.3",
-    "axios": "^1.17.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "http-proxy-middleware": "^3.0.5",
