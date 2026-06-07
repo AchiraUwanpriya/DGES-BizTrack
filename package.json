@@ -63,7 +63,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && copy public\\.htaccess build\\.htaccess",
+    "build": "react-scripts build && node -e \"const fs = require('fs'); if (fs.existsSync('public/.htaccess')) fs.copyFileSync('public/.htaccess', 'build/.htaccess');\"",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "proxy": "node proxy-server.js",
