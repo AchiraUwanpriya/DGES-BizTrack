@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/gps-proxy/:path*",
+      "destination": "/api/gps-proxy?path=:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
