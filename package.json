@@ -65,9 +65,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build && copy public\\.htaccess build\\.htaccess",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "proxy": "node proxy-server.js",
-    "start:all": "start /B node proxy-server.js && react-scripts start"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
@@ -91,9 +89,6 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@types/date-fns": "^2.6.3",
     "axios": "^1.17.0",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "http-proxy-middleware": "^3.0.5",
     "web-vitals": "^3.3.2"
   }
 }

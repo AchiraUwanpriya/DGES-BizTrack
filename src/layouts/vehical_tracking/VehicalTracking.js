@@ -1,369 +1,28 @@
-import React, { useState, useRef, useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
-import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import { CircularProgress, Box, IconButton, Typography, Button } from "@mui/material";
-import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
-import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import { Box, IconButton, Typography, Button, Paper } from "@mui/material";
+import MapRoundedIcon from "@mui/icons-material/MapRounded";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 
-// The unified proxy path works identically in development (Node dev server middleware)
-// and production (Hostinger Apache rewrite to gps-proxy.php).
-// process.env.PUBLIC_URL dynamically accommodates subfolder deployments.
-const PUBLIC_URL = process.env.PUBLIC_URL || "";
-const PROXY_URL = `${PUBLIC_URL}/gps-proxy/index.php?au=17D49774E905C0B2484BCD68401BCA34&m=true`;
-
-// ── BizTrack theme CSS injected into the GPS iframe ───────────────────────
-// Hides the original purple/blue navbar and sets padding/positions
-// so the map fills 100% of the iframe without scrollbars.
-const BIZTRACK_THEME = `
-  /* ── Hide original navbar & reset spacing ── */
-  nav.navbar,
-  .navbar,
-  .navbar-fixed-top {
-    display: none !important;
-  }
-  body {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
-  #page_map,
-  .page-map {
-    top: 0 !important;
-    height: 100% !important;
-  }
-  #page_menu,
-  .page-menu,
-  .menu-block {
-    top: 0 !important;
-    height: 100% !important;
-  }
-
-  /* ── Sidebar ── */
-  .page-menu, #page_menu {
-    background-color: #ffffff !important;
-    border-right: 1px solid #e0e7ef !important;
-  }
-  .page-menu .menu-block a,
-  #page_menu .menu-block a {
-    color: #1a2e4a !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    font-weight: 500 !important;
-    border-radius: 8px !important;
-    transition: background 0.15s ease !important;
-  }
-  .page-menu .menu-block a:hover,
-  #page_menu .menu-block a:hover {
-    background-color: #e8f0fb !important;
-    color: #004AAD !important;
-  }
-  .page-menu .menu-header,
-  #page_menu .menu-header {
-    background-color: #004AAD !important;
-    color: #ffffff !important;
-  }
-
-  /* ── Buttons ── */
-  .btn-primary, .btn-info, .btn-success {
-    background-color: #004AAD !important;
-    border-color: #003d94 !important;
-    border-radius: 8px !important;
-  }
-  .btn-primary:hover, .btn-info:hover, .btn-success:hover {
-    background-color: #0056c9 !important;
-  }
-
-  /* ── Panels ── */
-  .panel-primary > .panel-heading {
-    background-color: #004AAD !important;
-    border-color: #003d94 !important;
-  }
-
-  /* ── Typography ── */
-  body, html {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                 "Helvetica Neue", Arial, sans-serif !important;
-  }
-
-  /* ── Leaflet zoom controls ── */
-  .leaflet-control-zoom a {
-    color: #004AAD !important;
-    font-weight: 700 !important;
-  }
-  .leaflet-control-zoom a:hover {
-    background-color: #e8f0fb !important;
-  }
-
-  /* ── Scrollbars ── */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #f1f5f9; }
-  ::-webkit-scrollbar-thumb { background: #004AAD; border-radius: 3px; }
-`;
-
-function injectTheme(iframe) {
-  try {
-    const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
-    if (!doc || !doc.head) return;
-    // Avoid injecting twice
-    if (doc.getElementById("biztrack-theme")) return;
-    const style = doc.createElement("style");
-    style.id = "biztrack-theme";
-    style.textContent = BIZTRACK_THEME;
-    doc.head.appendChild(style);
-  } catch (e) {
-    // Silently ignore — cross-origin guard (shouldn't happen via proxy)
-  }
-}
+const MAP_URL = "https://gps.trackmycar.lk/index.php?au=17D49774E905C0B2484BCD68401BCA34&m=true";
 
 function VehicalTracking() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState("loading"); // "loading" | "ready" | "error"
-  const [errorDetail, setErrorDetail] = useState("");
-  const iframeRef = useRef(null);
-  const containerRef = useRef(null);
 
-  // Custom states synced from the iframe
-  const [iframeTitle, setIframeTitle] = useState("Vehicle Tracker");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [navControls, setNavControls] = useState({
-    map_layer: { visible: false, value: "", options: [] },
-    event_list_page: { visible: false, value: "", options: [] },
-    marker_list_page: { visible: false, value: "", options: [] },
-    route_list_page: { visible: false, value: "", options: [] },
-    zone_list_page: { visible: false, value: "", options: [] },
-  });
-
-  // Keep refs in sync for the polling function to avoid dependency loops
-  const iframeTitleRef = useRef(iframeTitle);
-  const isMenuOpenRef = useRef(isMenuOpen);
-  const navControlsRef = useRef(navControls);
-
-  useEffect(() => {
-    iframeTitleRef.current = iframeTitle;
-  }, [iframeTitle]);
-
-  useEffect(() => {
-    isMenuOpenRef.current = isMenuOpen;
-  }, [isMenuOpen]);
-
-  useEffect(() => {
-    navControlsRef.current = navControls;
-  }, [navControls]);
-
-  // Disable scroll on the parent route container to keep the layout fixed
-  useEffect(() => {
-    const parent = containerRef.current?.parentElement;
-    if (parent) {
-      const originalOverflow = parent.style.overflowY;
-      parent.style.overflowY = "hidden";
-      return () => {
-        parent.style.overflowY = originalOverflow;
-      };
-    }
-  }, []);
-
-  const syncFromIframe = () => {
-    try {
-      const iframe = iframeRef.current;
-      const win = iframe?.contentWindow;
-      const doc = iframe?.contentDocument || win?.document;
-      if (!doc || !win) return;
-
-      // 1. Sync Title
-      const pageTitleEl = doc.getElementById("page_title");
-      if (pageTitleEl) {
-        const txt = pageTitleEl.textContent.trim();
-        if (txt && txt !== iframeTitleRef.current) {
-          setIframeTitle(txt);
-        }
-      }
-
-      // 2. Sync Menu State
-      const pageMenu = doc.getElementById("page_menu");
-      const currentMenuOpen = pageMenu && win.getComputedStyle(pageMenu).display !== "none";
-      if (currentMenuOpen !== isMenuOpenRef.current) {
-        setIsMenuOpen(currentMenuOpen);
-      }
-
-      // 3. Sync Select Controls
-      const selectIds = [
-        "map_layer",
-        "event_list_page",
-        "marker_list_page",
-        "route_list_page",
-        "zone_list_page",
-      ];
-
-      let changed = false;
-      const currentControls = navControlsRef.current;
-      const updatedControls = { ...currentControls };
-
-      selectIds.forEach((id) => {
-        const selectEl = doc.getElementById(id);
-        if (selectEl) {
-          const displayStyle = win.getComputedStyle(selectEl).display;
-          const isVisible = displayStyle !== "none";
-
-          const options = Array.from(selectEl.options).map((opt) => ({
-            value: opt.value,
-            label: opt.text,
-          }));
-
-          const prev = currentControls[id];
-          const hasOptionsChanged =
-            prev.options.length !== options.length ||
-            prev.options.some((opt, idx) => opt.value !== options[idx].value || opt.label !== options[idx].label);
-
-          if (
-            prev.visible !== isVisible ||
-            prev.value !== selectEl.value ||
-            hasOptionsChanged
-          ) {
-            updatedControls[id] = {
-              visible: isVisible,
-              value: selectEl.value,
-              options,
-            };
-            changed = true;
-          }
-        } else if (currentControls[id].visible) {
-          updatedControls[id] = { visible: false, value: "", options: [] };
-          changed = true;
-        }
-      });
-
-      if (changed) {
-        setNavControls(updatedControls);
-      }
-    } catch (e) {
-      // Ignore security block or transient load errors
-    }
-  };
-
-  // Sync polling setup
-  useEffect(() => {
-    if (status !== "ready") return;
-
-    syncFromIframe();
-    const intervalId = setInterval(syncFromIframe, 500);
-    return () => clearInterval(intervalId);
-  }, [status]);
-
-  const handleControlChange = (id, newValue) => {
-    try {
-      const iframe = iframeRef.current;
-      const win = iframe?.contentWindow;
-      const doc = iframe?.contentDocument || win?.document;
-      if (!win || !doc) return;
-
-      const selectEl = doc.getElementById(id);
-      if (selectEl) {
-        selectEl.value = newValue;
-        const event = new Event("change", { bubbles: true });
-        selectEl.dispatchEvent(event);
-      }
-
-      setNavControls((prev) => ({
-        ...prev,
-        [id]: {
-          ...prev[id],
-          value: newValue,
-        },
-      }));
-    } catch (e) {
-      console.error(`Error changing control ${id}:`, e);
-    }
-  };
-
-  const toggleMenu = () => {
-    try {
-      const iframe = iframeRef.current;
-      const win = iframe?.contentWindow;
-      const doc = iframe?.contentDocument || win?.document;
-      if (!win || !doc) return;
-
-      if (isMenuOpenRef.current) {
-        if (typeof win.switchPage === "function") {
-          win.switchPage("map");
-        } else {
-          doc.getElementById("page_menu_map")?.click();
-        }
-      } else {
-        if (typeof win.switchPage === "function") {
-          win.switchPage("menu");
-        } else {
-          doc.querySelector(".show-menu")?.click();
-        }
-      }
-    } catch (e) {
-      console.error("Error toggling menu:", e);
-    }
-  };
-
-  const handleLoad = () => {
-    try {
-      const iframeDoc =
-        iframeRef.current?.contentDocument ||
-        iframeRef.current?.contentWindow?.document;
-      const title = iframeDoc?.title || "";
-
-      // If the iframe loaded the React app itself (proxy failed → .htaccess served index.html)
-      if (
-        title.toLowerCase().includes("biztrack") ||
-        title.toLowerCase().includes("react app")
-      ) {
-        setErrorDetail(
-          process.env.NODE_ENV === "production"
-            ? "The GPS proxy script (gps-proxy.php) may not be deployed or PHP cURL is not enabled. Visit yourdomain.com/gps-proxy.php?diag=1 to diagnose."
-            : "Proxy misconfiguration. Check that setupProxy.js is running (npm start)."
-        );
-        setStatus("error");
-        return;
-      }
-
-      // Verify GPS-specific content loaded (extra safety check)
-      const hasGpsMap = !!(
-        iframeDoc?.getElementById("map") ||
-        iframeDoc?.getElementById("page_map") ||
-        iframeDoc?.querySelector(".leaflet-container") ||
-        iframeDoc?.querySelector(".page-map")
-      );
-
-      // Also accept pages that have the GPS navbar (menu page, etc.)
-      const hasGpsNav = !!(
-        iframeDoc?.querySelector(".navbar-default") ||
-        iframeDoc?.querySelector("#page_menu")
-      );
-
-      if (!hasGpsMap && !hasGpsNav && title === "") {
-        // Empty page or unrecognised content — still try, might be an interstitial
-      }
-
-      injectTheme(iframeRef.current);
-    } catch (_) {
-      // Cross-origin guard (shouldn't happen via proxy — treat as success)
-      injectTheme(iframeRef.current);
-    }
-    setStatus("ready");
-  };
-
-  const handleRetry = () => {
-    setStatus("loading");
-    if (iframeRef.current) {
-      iframeRef.current.src = PROXY_URL;
-    }
+  const handleOpenMap = () => {
+    window.open(MAP_URL, "_blank", "noopener,noreferrer");
   };
 
   return (
     <Box
-      ref={containerRef}
       sx={{
         display: "flex",
         flexDirection: "column",
         height: "100%",
         maxHeight: "100%",
         overflow: "hidden",
-        backgroundColor: "#fff",
+        backgroundColor: "#f1f5f9",
       }}
     >
       {/* Header */}
@@ -371,7 +30,6 @@ function VehicalTracking() {
         sx={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
           px: 1.5,
           py: 0.8,
           backgroundColor: "#fff",
@@ -380,172 +38,100 @@ function VehicalTracking() {
           flexShrink: 0,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <IconButton
-            onClick={() => navigate(-1)}
-            size="small"
-            sx={{ color: "#004AAD", mr: 0.5 }}
-          >
-            <ArrowBackIosNewIcon fontSize="small" />
-          </IconButton>
+        <IconButton
+          onClick={() => navigate(-1)}
+          size="small"
+          sx={{ color: "#004AAD", mr: 0.5 }}
+        >
+          <ArrowBackIosNewIcon fontSize="small" />
+        </IconButton>
 
-          {status === "ready" && (
-            <IconButton
-              onClick={toggleMenu}
-              size="small"
-              sx={{ color: "#004AAD", mr: 1 }}
-            >
-              {isMenuOpen ? (
-                <CloseRoundedIcon fontSize="small" />
-              ) : (
-                <MenuRoundedIcon fontSize="small" />
-              )}
-            </IconButton>
-          )}
-
-          <Typography
-            variant="subtitle1"
-            fontWeight={700}
-            sx={{ color: "#004AAD", fontSize: 15, letterSpacing: 0.2 }}
-          >
-            {iframeTitle}
-          </Typography>
-        </Box>
-
-        {/* Dropdowns */}
-        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-          {status === "ready" &&
-            Object.entries(navControls).map(([id, control]) => {
-              if (!control.visible || control.options.length === 0) return null;
-              return (
-                <Box
-                  component="select"
-                  key={id}
-                  value={control.value}
-                  onChange={(e) => handleControlChange(id, e.target.value)}
-                  sx={{
-                    appearance: "none",
-                    WebkitAppearance: "none",
-                    MozAppearance: "none",
-                    padding: "6px 28px 6px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #cbd5e1",
-                    backgroundColor: "#f8fafc",
-                    backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23004AAD' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 8px center",
-                    backgroundSize: "14px",
-                    color: "#004AAD",
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    outline: "none",
-                    cursor: "pointer",
-                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-                    transition: "all 0.15s ease",
-                    boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                    "&:hover": {
-                      borderColor: "#004AAD",
-                      backgroundColor: "#f0f7ff",
-                    },
-                    "&:focus": {
-                      borderColor: "#004AAD",
-                      boxShadow: "0 0 0 2px rgba(0, 74, 173, 0.15)",
-                    },
-                  }}
-                >
-                  {control.options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Box>
-              );
-            })}
-        </Box>
+        <Typography
+          variant="subtitle1"
+          fontWeight={700}
+          sx={{ color: "#004AAD", fontSize: 15, letterSpacing: 0.2 }}
+        >
+          Vehicle Tracker
+        </Typography>
       </Box>
 
-      {/* Loading spinner */}
-      {status === "loading" && (
-        <Box
+      {/* Main Content */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          flex: 1,
+          p: 3,
+        }}
+      >
+        <Paper
+          elevation={0}
           sx={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            flex: 1,
-            gap: 2,
-          }}
-        >
-          <CircularProgress size={36} thickness={4} sx={{ color: "#004AAD" }} />
-          <Typography variant="body2" color="text.secondary">
-            Loading tracker…
-          </Typography>
-        </Box>
-      )}
-
-      {/* Error state */}
-      {status === "error" && (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            flex: 1,
-            gap: 2,
-            px: 3,
+            p: 5,
+            borderRadius: 4,
+            maxWidth: 400,
             textAlign: "center",
+            backgroundColor: "#fff",
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)",
           }}
         >
-          <WarningAmberRoundedIcon sx={{ fontSize: 48, color: "#f59e0b" }} />
-          <Typography variant="subtitle1" fontWeight={600}>
-            Tracker Unavailable
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              backgroundColor: "#f0f7ff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mb: 3,
+            }}
+          >
+            <MapRoundedIcon sx={{ fontSize: 40, color: "#004AAD" }} />
+          </Box>
+          
+          <Typography variant="h5" fontWeight={700} sx={{ color: "#1e293b", mb: 1.5 }}>
+            Live GPS Tracking
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Could not load the GPS tracker. Please try again.
+          
+          <Typography variant="body1" sx={{ color: "#64748b", mb: 4, lineHeight: 1.6 }}>
+            For optimal security and performance, the live map tracking dashboard opens in a separate secure window. You will be logged in automatically.
           </Typography>
-          {errorDetail ? (
-            <Typography
-              variant="caption"
-              sx={{
-                color: "#b45309",
-                backgroundColor: "#fef3c7",
-                px: 1.5,
-                py: 1,
-                borderRadius: 2,
-                maxWidth: 320,
-                wordBreak: "break-word",
-              }}
-            >
-              {errorDetail}
-            </Typography>
-          ) : null}
+
           <Button
             variant="contained"
-            startIcon={<RefreshRoundedIcon />}
-            onClick={handleRetry}
-            sx={{ backgroundColor: "#004AAD", borderRadius: 2, mt: 1 }}
+            size="large"
+            onClick={handleOpenMap}
+            endIcon={<OpenInNewRoundedIcon />}
+            sx={{
+              backgroundColor: "#004AAD",
+              color: "#fff",
+              px: 4,
+              py: 1.5,
+              borderRadius: 3,
+              fontWeight: 600,
+              textTransform: "none",
+              fontSize: "1rem",
+              boxShadow: "0 4px 14px 0 rgba(0, 74, 173, 0.39)",
+              "&:hover": {
+                backgroundColor: "#003d94",
+                transform: "translateY(-1px)",
+                boxShadow: "0 6px 20px rgba(0, 74, 173, 0.23)",
+              },
+              transition: "all 0.2s ease",
+            }}
           >
-            Retry
+            Open Live Map
           </Button>
-        </Box>
-      )}
-
-      {/* GPS Iframe */}
-      <iframe
-        ref={iframeRef}
-        src={PROXY_URL}
-        title="Vehicle Tracker"
-        onLoad={handleLoad}
-        allow="geolocation"
-        style={{
-          flex: 1,
-          border: "none",
-          width: "100%",
-          height: "100%",
-          display: status === "ready" ? "block" : "none",
-        }}
-      />
+        </Paper>
+      </Box>
     </Box>
   );
 }
